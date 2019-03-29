@@ -1,6 +1,5 @@
 package com.xhan.xhanblog.controller;
 
-import com.xhan.xhanblog.entity.Status;
 import com.xhan.xhanblog.entity.dao.TUser;
 import com.xhan.xhanblog.entity.vo.ArticleVO;
 import com.xhan.xhanblog.entity.vo.MetaVO;
@@ -13,22 +12,24 @@ import com.xhan.xhanblog.service.UserHelper;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 
 import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Controller
 @NoArgsConstructor
 public abstract class BaseController {
 
-    @Autowired protected UserHelper userHelper;
-    @Autowired protected ArticleHelper articleHelper;
-    @Autowired protected MetaHelper metaHelper;
-    @Autowired protected CommentHelper commentHelper;
+    @Autowired
+    protected UserHelper userHelper;
+    @Autowired
+    protected ArticleHelper articleHelper;
+    @Autowired
+    protected MetaHelper metaHelper;
+    @Autowired
+    protected CommentHelper commentHelper;
 
     void checkIfLogin(HttpSession session) {
         TUser user = (TUser) session.getAttribute("user");

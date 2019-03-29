@@ -1,11 +1,7 @@
 package com.xhan.xhanblog.service.impl;
 
 import com.github.pagehelper.PageHelper;
-import com.xhan.xhanblog.entity.Status;
-import com.xhan.xhanblog.entity.dao.TArticle;
-import com.xhan.xhanblog.entity.dao.TArticleExample;
-import com.xhan.xhanblog.entity.dao.TMeta;
-import com.xhan.xhanblog.entity.dao.TMetaExample;
+import com.xhan.xhanblog.entity.dao.*;
 import com.xhan.xhanblog.entity.dto.CreateCateDTO;
 import com.xhan.xhanblog.entity.dto.UpdateCateDTO;
 import com.xhan.xhanblog.entity.vo.ArticleVO;
@@ -13,8 +9,10 @@ import com.xhan.xhanblog.entity.vo.MetaVO;
 import com.xhan.xhanblog.exception.meta.MetaException;
 import com.xhan.xhanblog.exception.meta.MetaTypeNotSuitException;
 import com.xhan.xhanblog.exception.meta.cate.*;
+import com.xhan.xhanblog.exception.meta.tag.TagException;
 import com.xhan.xhanblog.repository.TArticleMapper;
 import com.xhan.xhanblog.repository.TMetaMapper;
+import com.xhan.xhanblog.repository.TRelationMapper;
 import com.xhan.xhanblog.service.MetaHelper;
 import com.xhan.xhanblog.util.MetaType;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,11 +30,13 @@ public class MetaHelperImpl implements MetaHelper {
 
     private final TMetaMapper metaMapper;
     private final TArticleMapper articleMapper;
+    private final TRelationMapper relationMapper;
 
     @Autowired
-    public MetaHelperImpl(TMetaMapper metaMapper, TArticleMapper articleMapper) {
+    public MetaHelperImpl(TMetaMapper metaMapper, TArticleMapper articleMapper, TRelationMapper relationMapper) {
         this.metaMapper = metaMapper;
         this.articleMapper = articleMapper;
+        this.relationMapper = relationMapper;
     }
 
     @Override
@@ -63,34 +63,29 @@ public class MetaHelperImpl implements MetaHelper {
 
     @Override
     @Transactional(rollbackFor = CategoryException.class)
-    public void deleteCate(String delete) {
-        // content和type上有联合unique约束
-        Long deleteId = metaMapper.getCateIdByContent(delete);
+    public void deleteCate(String content) {
+        // clear meta table
+        Long deleteId = metaMapper.getCateIdByContent(content);
         if (deleteId == null)
             throw new CategoryNotFoundException();
         metaMapper.deleteByPrimaryKey(deleteId);
-
-        TArticleExample articleExample = new TArticleExample();
-        articleExample.createCriteria().andCategoryIdEqualTo(deleteId);
-        articleMapper.selectByExample(articleExample).forEach(a -> {
-            a.setCategoryId(null);
-            articleMapper.updateByPrimaryKey(a);
-        });
+        // clear cate in article
+        articleMapper.setCateToNull(deleteId);
+        // clear relation
+        TRelationExample example = new TRelationExample();
+        example.createCriteria().andMIdEqualTo(deleteId);
+        relationMapper.deleteByExample(example);
     }
 
     @Override
     @Transactional(rollbackFor = CategoryException.class)
     public void createCategory(CreateCateDTO create) {
-        // 需要查看parent和content 是否已经存在
+        // 需要查看content 是否已经存在（在有unique约束的情况下是否还需要检查）
         TMeta cate = new TMeta(create);
-        checkCCateDTO(create);
+        if (!create.isCreateTextLegal())
+            throw new CreateCateDTOIllegalException();
 
-        TMetaExample example = new TMetaExample();
-        example.createCriteria()
-                .andParentEqualTo(create.getParent())
-                .andMContentEqualTo(create.getContent());
-
-        if (metaMapper.countByExample(example) > 0)
+        if (metaMapper.getCateIdByContent(create.getContent()) != null)
             throw new CateAlreadyExistException();
 
         metaMapper.insert(cate);
@@ -106,47 +101,63 @@ public class MetaHelperImpl implements MetaHelper {
             // 如果修改了content,就要修改TArticle中对应的属性
             articleMapper.updateCategoryContent(update.getContent(), cate.getMId());
         }
-        TMeta nCate = copyAttr(update);
-        nCate.setMId(cate.getMId());
+        TMeta nCate = copyAttr(update, cate);
         if (metaMapper.updateByPrimaryKeySelective(nCate) != 1)
             throw new CategoryException("error in change attr");
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ArticleVO> getArticleByCate(String cate, Integer page, Integer pageSize) {
-        if (page < 0 || pageSize < 0)
-            throw new IllegalArgumentException();
-
-        TMetaExample metaExample = new TMetaExample();
-        metaExample.createCriteria()
-                .andMTypeEqualTo(MetaType.CATEGORY.getType())
-                .andMContentEqualTo(cate);
-
-        // content 上有unique约束
-        if (metaMapper.countByExample(metaExample) != 1)
-            throw new CategoryNotFoundException();
-
+    public List<ArticleVO> getArticleByCateId(Long cateId, Integer page, Integer pageSize, boolean isAdmin) {
         TArticleExample example = new TArticleExample();
-        example.createCriteria().andCategoryEqualTo(cate);
+        example.createCriteria().andCategoryIdEqualTo(cateId);
+        example.setOrderByClause("create_time DESC");
 
+        return veilArticle(page, pageSize, isAdmin, example);
+    }
+
+    private List<ArticleVO> veilArticle(Integer page, Integer pageSize, boolean isAdmin, TArticleExample example) {
         PageHelper.startPage(page, pageSize);
         List<TArticle> articles = articleMapper.selectByExample(example);
 
+        return veilArticle(isAdmin, articles);
+    }
+
+    @Override
+    public List<ArticleVO> getArticleByTag(String tag, Integer page, Integer pageSize, boolean isAdmin) {
+        Long tagId = getTagIdByContent(tag);
+
+        PageHelper.startPage(page, pageSize);
+        List<TArticle> articles = articleMapper.selectByTagId(tagId);
+        return veilArticle(isAdmin, articles);
+    }
+
+    private List<ArticleVO> veilArticle(boolean isAdmin, List<TArticle> articles) {
         return articles.stream()
-                .filter(article -> article.getStatus().equals(Status.PUBLISHED.getStatus()))
+                .filter(a -> !isAdmin && a.isBanished())
                 .map(ArticleVO::new)
                 .collect(toList());
     }
 
-    private TMeta copyAttr(@Valid UpdateCateDTO update) {
+    private Long getTagIdByContent(String tag) {
+        TMetaExample example = new TMetaExample();
+        example.createCriteria()
+                .andMTypeEqualTo(MetaType.TAG.getType())
+                .andMContentEqualTo(tag);
+
+        List<TMeta> metas = metaMapper.selectByExample(example);
+        if (metas.size() != 1)
+            throw new TagException();
+        return metas.get(0).getMId();
+    }
+
+    private TMeta copyAttr(@Valid UpdateCateDTO update, TMeta c) {
         TMeta cate = new TMeta();
+        cate.setMId(c.getMId());
         if (hasText(update.getContent()))
             cate.setMContent(update.getContent());
         if (hasText(update.getDescription()))
             cate.setDescription(update.getDescription());
-        if (update.getParent() != null)
-            cate.setParent(update.getParent());
         return cate;
     }
 
@@ -156,21 +167,8 @@ public class MetaHelperImpl implements MetaHelper {
         // 如果对应id 没有TMeta或者update中设置了父id，而父id不存在则抛出异常
         if (cate == null)
             throw new CategoryNotFoundException();
-        if (!cate.getMType().equals(MetaType.CATEGORY.getType()))
+        if (cate.isTag())
             throw new MetaTypeNotSuitException();
-        if (update.getParent() != null && isCateExistById(update.getParent()))
-            throw new CategoryNotFoundException();
-    }
-
-    private boolean isCateExistById(Long cateId) {
-        return metaMapper.selectByPrimaryKey(cateId) == null;
-    }
-
-    private void checkCCateDTO(@Valid CreateCateDTO create) {
-        if (!create.isCreateTextLegal())
-            throw new CreateCateDTOIllegalException();
-        if (create.getParent() != null && isCateExistById(create.getParent()))
-            throw new CategoryNotFoundException();
     }
 
 }

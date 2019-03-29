@@ -23,6 +23,11 @@ import static org.springframework.util.StringUtils.hasText;
 @Controller
 public class AdminController extends BaseController {
 
+    @GetMapping(value = SLASH)
+    public ResponseEntity<?> index(HttpSession session) {
+        return new ResponseEntity<>(getFaces(session), OK);
+    }
+
     @PostMapping(value = ADMIN_LOGIN_URL)
     public ResponseEntity<?> login(@RequestBody @Valid UsernamePasswordToken token,
             BindingResult result, HttpSession session, HttpServletRequest request) {

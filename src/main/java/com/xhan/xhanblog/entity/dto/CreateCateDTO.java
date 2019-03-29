@@ -13,9 +13,6 @@ public class CreateCateDTO {
 
     private String description;
 
-    @Min(0)
-    private Long parent;
-
     public boolean isCreateTextLegal() {
         if (!hasText(content) || content.length() > 20)
             return false;

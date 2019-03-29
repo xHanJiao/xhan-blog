@@ -219,17 +219,31 @@
     </if>
   </select>
 
+  <select id="selectByTagId" parameterType="java.lang.Long">
+    SELECT a.* FROM
+    t_article AS a INNER JOIN t_relation AS t
+    ON a.a_id = t.a_id
+    WHERE t.m_id = #{tagId}
+  </select>
+
   <update id="updateCategoryId" parameterType="Long">
     UPDATE t_article
     SET category_id = #{cateId}
     WHERE a_id = #{aId}
   </update>
 
-  <update id="updateCategoryContent" parameterType="java.lang.String">
+  <update id="updateCategoryContent" >
     UPDATE `t_article`
     SET category = #{cate}
     WHERE category_id = #{cateId}
   </update>
+
+  <update id="setCateToNull" parameterType="Long">
+    UPDATE t_article
+    SET category_id = NULL, category=NULL
+    WHERE category_id = #{deleteId}
+  </update>
+
   <update id="updateByExampleSelective" parameterType="map">
     update t_article
     <set>

@@ -47,4 +47,8 @@ public interface TArticleMapper {
     }
 
     int updateCategoryId(@Param("cateId") Long cateId, @Param("aId") Long aId);
+
+    int setCateToNull(Long deleteId);
+
+    List<TArticle> selectByTagId(Long tagId);
 }

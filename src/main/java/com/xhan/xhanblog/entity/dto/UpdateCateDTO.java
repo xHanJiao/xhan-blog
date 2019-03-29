@@ -28,9 +28,6 @@ public class UpdateCateDTO extends CreateCateDTO {
         if (hasText(getContent()) && getContent().length() > 20)
             return false;
 
-        if (getContent() == null && getParent() == null && getDescription() == null)
-            return false;
-
         return true;
     }
 }

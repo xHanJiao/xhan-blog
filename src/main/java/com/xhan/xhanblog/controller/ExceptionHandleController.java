@@ -18,7 +18,6 @@ public class ExceptionHandleController {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(e.getMessage());
-
     }
 
     @ExceptionHandler(value = NotLoginException.class)

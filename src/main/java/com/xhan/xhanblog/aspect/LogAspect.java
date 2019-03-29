@@ -1,4 +1,4 @@
-package com.xhan.xhanblog.service;
+package com.xhan.xhanblog.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;

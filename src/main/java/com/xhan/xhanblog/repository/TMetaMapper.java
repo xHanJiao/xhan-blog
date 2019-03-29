@@ -2,11 +2,11 @@ package com.xhan.xhanblog.repository;
 
 import com.xhan.xhanblog.entity.dao.TMeta;
 import com.xhan.xhanblog.entity.dao.TMetaExample;
-import java.util.List;
-
 import com.xhan.xhanblog.util.MetaType;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface TMetaMapper {
@@ -32,7 +32,7 @@ public interface TMetaMapper {
 
     int updateByPrimaryKey(TMeta record);
 
-    default boolean isMetaExistByContent(String content){
+    default boolean isMetaExistByContent(String content) {
         TMetaExample example = new TMetaExample();
         example.createCriteria()
                 .andMTypeEqualTo(MetaType.CATEGORY.getType())
@@ -41,4 +41,5 @@ public interface TMetaMapper {
     }
 
     Long getCateIdByContent(String delete);
+
 }

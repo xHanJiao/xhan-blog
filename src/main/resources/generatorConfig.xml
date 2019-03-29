@@ -48,9 +48,9 @@
         <!--<table tableName="t_user">-->
             <!--<generatedKey column="u_id" sqlStatement="MySql" identity="true" />-->
         <!--</table>-->
-        <!--<table tableName="t_meta">-->
-            <!--<generatedKey column="m_id" sqlStatement="MySql" identity="true" />-->
-        <!--</table>-->
+        <table tableName="t_meta">
+            <generatedKey column="m_id" sqlStatement="MySql" identity="true" />
+        </table>
         <!--<table tableName="t_logs">-->
             <!--<generatedKey column="l_id" sqlStatement="MySql" identity="true" />-->
         <!--</table>-->
@@ -60,8 +60,8 @@
         <!--<table tableName="t_relation">-->
 
         <!--</table>-->
-        <table tableName="t_article">
-            <generatedKey column="a_id" sqlStatement="MySql" identity="true" />
-        </table>
+        <!--<table tableName="t_article">-->
+            <!--<generatedKey column="a_id" sqlStatement="MySql" identity="true" />-->
+        <!--</table>-->
     </context>
 </generatorConfiguration>

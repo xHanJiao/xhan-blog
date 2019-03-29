@@ -30,5 +30,8 @@ public interface MetaHelper {
      */
     void updateCategory(@Valid UpdateCateDTO update);
 
-    List<ArticleVO> getArticleByCate(String cate, Integer page, Integer pageSize);
+    List<ArticleVO> getArticleByCateId(Long cate, Integer page, Integer pageSize, boolean isAdmin);
+
+    // 先得到对应的tagId，再通过Relation表和Article的连接得到所有的文章
+    List<ArticleVO> getArticleByTag(String tag, Integer page, Integer pageSize, boolean isAdmin);
 }

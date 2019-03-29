@@ -1,5 +1,6 @@
 package com.xhan.xhanblog.entity.vo;
 
+import com.xhan.xhanblog.entity.Status;
 import com.xhan.xhanblog.entity.dao.TArticle;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,7 +17,7 @@ public class ArticleVO extends MetaArtVO {
 
     private Integer hits;
 
-    private Short commentNums;
+    private Integer commentNums;
 
     private String status;
 
@@ -29,5 +30,9 @@ public class ArticleVO extends MetaArtVO {
         setATitle(t.getATitle());
         setTags(t.getTags());
         setCategory(t.getCategory());
+    }
+
+    public boolean isBanished() {
+        return getStatus().equals(Status.BANISHED.getStatus());
     }
 }

@@ -20,6 +20,9 @@ public interface ControllerConst {
     String INDEX_PAGE = "index";
     String CATEGORY_ARTICLE = "category";
     String CATEGORY_URL = SLASH + CATEGORY_ARTICLE;
+    String CATEGORY_ARTICLE_URL = CATEGORY_URL + SLASH + "article";
+    String TAG_URL = "/tag";
+    String DELETE_CATEGORY_URL = CATEGORY_URL + SLASH + "delete";
     String COMMENT_URL = SLASH + "comment";
     String COMMENT_URL_DECENT = COMMENT_URL + SLASH + "decent";
 }
